@@ -6,6 +6,7 @@ import {
 import { IDX } from '@ceramicstudio/idx'
 import { definitions } from './docIDs.json'
 import { setFailed } from './Reducer'
+import JSONPretty from 'react-json-pretty'
 
 const verifier = 'http://localhost:3001'
 // const verifier = 'https://oiekhuylog.execute-api.us-west-2.amazonaws.com/develop'
@@ -87,7 +88,7 @@ const CreateMyCoCred = ({ did, failed, ceramic }) => {
       if(!att) throw new Error('missing attestation')
       const parts = att?.split('.').map(deB64)
 
-      setVC(JSON.stringify(parts[1], null, 4))
+      setVC(JSON.stringify(parts[1]))
       //   const acct = parts[1].vc.credentialSubject.account
 
     //   const account = {
@@ -145,7 +146,7 @@ const CreateMyCoCred = ({ did, failed, ceramic }) => {
   }
 
   return (
-    <Box align='center'><Text>Verified myColorado credential:</Text><Text>{JSON.stringify(vc, null, 4)}</Text></Box>
+    <Box><Text>Verified myColorado credential:</Text><JSONPretty id="json-pretty" style={{fontSize: "0.75em"}} data={vc}></JSONPretty></Box>
   )
 }
 
