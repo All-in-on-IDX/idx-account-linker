@@ -10,7 +10,7 @@ import JSONPretty from 'react-json-pretty'
 
 const verifier = 'http://localhost:3001'
 // const verifier = 'https://oiekhuylog.execute-api.us-west-2.amazonaws.com/develop'
-const idxKey = 'aka'
+const idxKey = 'driversLicense'
 
 // Reverse base 64 encoding to an object if possible
 const deB64 = (str) => {
@@ -89,28 +89,16 @@ const CreateMyCoCred = ({ did, failed, ceramic }) => {
       const parts = att?.split('.').map(deB64)
 
       setVC(JSON.stringify(parts[1]))
-      //   const acct = parts[1].vc.credentialSubject.account
 
-    //   const account = {
-    //     protocol: 'https',
-    //     host: 'github.com',
-    //     id: acct.username,
-    //     claim: acct.url,
-    //     attestations: [{ 'did-jwt-vc': att }]
-    //   }
+      const driversLicense = parts[1].vc.credentialSubject.driversLicense
 
-    //   const idx = new IDX({ ceramic, aliases: definitions })
+      const idx = new IDX({ ceramic, aliases: definitions })
 
-    //   const aka = (await idx.get(idxKey)) || { accounts: [] }
+      const dL = (await idx.get(idxKey)) || driversLicense
 
-    //   console.info('existing', { ...aka })
+      console.info('existing', { ...dL })
 
-    //   if(!aka.accounts) throw new Error(`malformed ${idxKey} entry`)
-    //   aka.accounts.push(account)
-
-    //   console.info('new', { ...aka })
-
-    //   console.info('repo', (await idx.merge(idxKey, aka)).toUrl())
+      console.info('repo', (await idx.set(idxKey, driversLicense)).toUrl())
       setDone(true)
     } catch(err) {
       console.error(err)
