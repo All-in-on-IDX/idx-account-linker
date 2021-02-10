@@ -21,46 +21,63 @@ const deB64 = (str) => {
   } 
 }
 
-// Convert the object representation of a JWT to a string
-const jwtStr = (obj) => (
-  [
-    obj.signatures[0].protected,
-    obj.payload,
-    obj.signatures[0].signature,
-  ]
-  .join('.')
-)
+const MOCK_BODY = {
+    Merchant: 5,
+    MerchantName: 'EthDenver',
+    Version: '08/26/2020',
+    MerchantType: 'Merchant',
+    RequestedDate: 'Fri Jan 28 21:02:18 UTC 2021',
+    Name: 'EthDevner Multiply',
+    DisplayName: 'RICARDO, RICKY',
+    County: 'Jefferson County',
+    EmailAddress: 'woot@gmail.com',
+    MerchantPassthruData: {
+      Message:
+        '<Whatever you want to pass to the Mobile App message to the user.>',
+      ControlCode: ''
+    },
+    MobileNumber: '3035551212',
+    FirstName: 'RICKY',
+    LastName: 'RICARDO',
+    Zip: '80003',
+    City: 'ARVADA',
+    State: 'CO',
+    Last4: '9089',
+    DOB: 'MMDDYY',
+    CIN: 'DL#',
+    CoResident: 'true/false',
+    Image: '<uuencoded image>',
+    merchant_id: 5
+  }
 
-const CreateCredential = ({ did, username, failed, ceramic }) => {
+const CreateMyCoCred = ({ did, failed, ceramic }) => {
   const [done, setDone] = useState(false)
   const [error, setError] = useState()
+  const [vc, setVC] = useState()
   const create = async () => {
     try {
-      let url = `${verifier}/api/v0/request-github`
+      let url = `${verifier}/api/v0/request-myco`
       console.info(JSON.stringify(
-        { did, username }
+        { did }
       ))
       let res = await fetch(url, {
         method: 'post',
         body: JSON.stringify(
-          { did, username }
+          { did }
         ),
       })
       let datum = await res.json()
       const challengeCode = datum?.data?.challengeCode
 
       if(!challengeCode) throw new Error("Couldn't generate challenge")
-      
-      const jws = jwtStr(
-        await ceramic.did.createJWS({ challengeCode })
-      )
 
-      //console.info('Valid:', await ceramic.did.verifyJWS(jws))
+      let body = MOCK_BODY
+      body.MerchantPassthruData.ControlCode = challengeCode
 
-      url = `${verifier}/api/v0/confirm-github`
+      url = `${verifier}/api/v0/verify-myco-webhook`
       res = await fetch(url, {
         method: 'post',
-        body: JSON.stringify({ jws }),
+        body: JSON.stringify(body),
       })
 
       datum = await res.json()
@@ -69,28 +86,30 @@ const CreateCredential = ({ did, username, failed, ceramic }) => {
       const att = datum?.data?.attestation
       if(!att) throw new Error('missing attestation')
       const parts = att?.split('.').map(deB64)
-      const acct = parts[1].vc.credentialSubject.account
 
-      const account = {
-        protocol: 'https',
-        host: 'github.com',
-        id: acct.username,
-        claim: acct.url,
-        attestations: [{ 'did-jwt-vc': att }]
-      }
+      setVC(JSON.stringify(parts[1], null, 4))
+      //   const acct = parts[1].vc.credentialSubject.account
 
-      const idx = new IDX({ ceramic, aliases: definitions })
+    //   const account = {
+    //     protocol: 'https',
+    //     host: 'github.com',
+    //     id: acct.username,
+    //     claim: acct.url,
+    //     attestations: [{ 'did-jwt-vc': att }]
+    //   }
 
-      const aka = (await idx.get(idxKey)) || { accounts: [] }
+    //   const idx = new IDX({ ceramic, aliases: definitions })
 
-      console.info('existing', { ...aka })
+    //   const aka = (await idx.get(idxKey)) || { accounts: [] }
 
-      if(!aka.accounts) throw new Error(`malformed ${idxKey} entry`)
-      aka.accounts.push(account)
+    //   console.info('existing', { ...aka })
 
-      console.info('new', { ...aka })
+    //   if(!aka.accounts) throw new Error(`malformed ${idxKey} entry`)
+    //   aka.accounts.push(account)
 
-      console.info('repo', (await idx.merge(idxKey, aka)).toUrl())
+    //   console.info('new', { ...aka })
+
+    //   console.info('repo', (await idx.merge(idxKey, aka)).toUrl())
       setDone(true)
     } catch(err) {
       console.error(err)
@@ -118,7 +137,7 @@ const CreateCredential = ({ did, username, failed, ceramic }) => {
   if(!done) {
     return (
       <Box align='center'>
-        <Text>Verifying gist for {username}.</Text>
+        <Text>Connecting myColorado...</Text>
         <span> </span>
         <Spinner/>
       </Box>
@@ -126,15 +145,15 @@ const CreateCredential = ({ did, username, failed, ceramic }) => {
   }
 
   return (
-    <Box align='center'><Text>Verified</Text></Box>
+    <Box align='center'><Text>Verified myColorado credential:</Text><Text>{JSON.stringify(vc, null, 4)}</Text></Box>
   )
 }
 
 export default connect(
   (state) => {
-    const { did, username, failed } = state
+    const { did, failed } = state
     return {
-      did, username, failed,
+      did, failed,
     }
   }
-)(CreateCredential)
+)(CreateMyCoCred)
